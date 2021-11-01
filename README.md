@@ -13,7 +13,7 @@ brew install mint
 2 安装 Swift Package Manager Mirror
 
 ```bash
-mint install josercc/spm_mirror@main --fore
+mint install josercc/spm_mirror@main -f
 ```
 
 ## 使用
