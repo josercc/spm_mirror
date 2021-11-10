@@ -1,7 +1,6 @@
 import ArgumentParser
 import SwiftShell
 import Foundation
-import XcodeProjectCore
 
 /// Swift Package Manager 下载和更新依赖加速
 struct SpmMirror: ParsableCommand {
@@ -11,28 +10,11 @@ struct SpmMirror: ParsableCommand {
     
     mutating func run() throws {
         let pwd = try pwd()
-        let pbxPath = "/Users/king/Documents/swiftUI_win/Win+/Win+.xcodeproj" + "/project.pbxproj"
-        let xcodeprojectFileURL = URL(fileURLWithPath: pbxPath)
-
-        // Instanciate `XcodeProject`.
-        let xcodeproject = try XcodeProject(xcodeprojectURL: xcodeprojectFileURL)
-        for element in xcodeproject.objects {
-            if let value = element.value as? XC.RemoteSwiftPackageReference {
-                
-            }
-        }
-//        SwiftShell.main.currentdirectory = pwd
-//        print("swift package update --verbose")
-//        let output = SwiftShell.run("swift", "package", "update", "--verbose")
-//        guard output.succeeded else {
-//            if let error = output.error {
-//                throw error
-//            } else {
-//                throw NSError(domain: "未知错误", code: -1, userInfo: nil)
-//            }
-//        }
+        SwiftShell.main.currentdirectory = pwd
+        try runAndPrint("swift", "package", "resolve")
         let home = try home()
         let _derivedDataPath = derivedDataPath ?? "\(home)/Library/Developer/Xcode/DerivedData"
+        var currentDerivedDataPath:String?
         for element in try FileManager.default.contentsOfDirectory(atPath: _derivedDataPath) {
             let infoPlistPath = "\(_derivedDataPath)/\(element)/info.plist"
             guard FileManager.default.fileExists(atPath: infoPlistPath) else {
@@ -44,26 +26,31 @@ struct SpmMirror: ParsableCommand {
             guard let workspancePath = map["WorkspacePath"] as? String, workspancePath == pwd else {
                 continue
             }
-            let buildPath = "\(pwd)/.build"
-            let sourcePackagesPath = "\(_derivedDataPath)/\(element)/SourcePackages"
-            try copy(fromDirectory: buildPath,
-                     toDirectory: sourcePackagesPath,
-                     name: "artifacts",
-                     isDirectory: true)
-            try copy(fromDirectory: buildPath,
-                     toDirectory: sourcePackagesPath,
-                     name: "checkouts",
-                     isDirectory: true)
-            try copy(fromDirectory: buildPath,
-                     toDirectory: sourcePackagesPath,
-                     name: "repositories",
-                     isDirectory: true)
-            try copy(fromDirectory: buildPath,
-                     toDirectory: sourcePackagesPath,
-                     name: "workspace-state.json",
-                     isDirectory: false)
+            currentDerivedDataPath = "\(_derivedDataPath)/\(element)"
         }
+        guard let _currentDerivedDataPath = currentDerivedDataPath else {
+            throw "当前项目还没有 DerivedData 目录 请先用 Xcode 打开 Package.swift 自动创建"
+        }
+        let buildPath = "\(pwd)/.build"
+        let sourcePackagesPath = "\(_currentDerivedDataPath)/SourcePackages"
+        try copy(fromDirectory: buildPath,
+                 toDirectory: sourcePackagesPath,
+                 name: "artifacts",
+                 isDirectory: true)
+        try copy(fromDirectory: buildPath,
+                 toDirectory: sourcePackagesPath,
+                 name: "checkouts",
+                 isDirectory: true)
+        try copy(fromDirectory: buildPath,
+                 toDirectory: sourcePackagesPath,
+                 name: "repositories",
+                 isDirectory: true)
+        try copy(fromDirectory: buildPath,
+                 toDirectory: sourcePackagesPath,
+                 name: "workspace-state.json",
+                 isDirectory: false)
     }
+    
     
     func copy(fromDirectory:String, toDirectory:String, name:String, isDirectory:Bool) throws {
         let from = "\(fromDirectory)/\(name)"
@@ -128,3 +115,8 @@ struct SpmMirror: ParsableCommand {
 }
 
 SpmMirror.main()
+
+
+extension String: LocalizedError {
+    public var errorDescription: String? {self}
+}
