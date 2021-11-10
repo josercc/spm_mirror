@@ -37,6 +37,6 @@ mint run spm_mirror@main
 # --derivedDataPath 可以自定义 DerivedData 目录，不设置默认为 $Home/Library/Developer/Xcode/DerivedData
 ```
 
-## 后续更新
+## Xcode Swift Package Manager 加速
 
-后面更新会支持 workspace 的工程缓存加速
+https://github.com/josercc/SPMTools
