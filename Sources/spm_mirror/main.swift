@@ -1,6 +1,7 @@
 import ArgumentParser
 import SwiftShell
 import Foundation
+import XcodeProjectCore
 
 /// Swift Package Manager 下载和更新依赖加速
 struct SpmMirror: ParsableCommand {
@@ -10,6 +11,16 @@ struct SpmMirror: ParsableCommand {
     
     mutating func run() throws {
         let pwd = try pwd()
+        let pbxPath = "/Users/king/Documents/swiftUI_win/Win+/Win+.xcodeproj" + "/project.pbxproj"
+        let xcodeprojectFileURL = URL(fileURLWithPath: pbxPath)
+
+        // Instanciate `XcodeProject`.
+        let xcodeproject = try XcodeProject(xcodeprojectURL: xcodeprojectFileURL)
+        for element in xcodeproject.objects {
+            if let value = element.value as? XC.RemoteSwiftPackageReference {
+                
+            }
+        }
 //        SwiftShell.main.currentdirectory = pwd
 //        print("swift package update --verbose")
 //        let output = SwiftShell.run("swift", "package", "update", "--verbose")
