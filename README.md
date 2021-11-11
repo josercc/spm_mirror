@@ -1,42 +1,42 @@
 # spm_mirror
 
-采用 https://xiaozhuanlan.com/topic/4812796035 方案的 Swift Package Manager 加速脚本
+Swift Package Manager acceleration script using https://xiaozhuanlan.com/topic/4812796035 scheme
 
-## 安装
+## Install
 
-1 安装 Mint
+1 Install Mint
 
 ```bash
 brew install mint
 ```
 
-2 安装 Swift Package Manager Mirror
+2 Install Swift Package Manager Mirror
 
 ```bash
 mint install josercc/spm_mirror@main -f
 ```
 
-## 使用
+## How To Use
 
-1 cd 到对应 SPM 工程目录
+1 cd to the corresponding SPM project directory
 
 ```bash
 cd /Users/king/Documents/build_android
 ```
 
-2 执行正常的 SPM命令
+2 Execute SPM command
 
 ```bash
 swift package update --verbose
 ```
 
-3 执行转移缓存
+3 Perform transfer caching
 
 ```
 mint run spm_mirror@main
-# --derivedDataPath 可以自定义 DerivedData 目录，不设置默认为 $Home/Library/Developer/Xcode/DerivedData
+# --derivedDataPath can customize the DerivedData directory, if it is not set, the default is $Home/Library/Developer/Xcode/DerivedData
 ```
 
-## Xcode Swift Package Manager 加速
+## Xcode Swift Package Manager acceleration
 
 https://github.com/josercc/SPMTools
