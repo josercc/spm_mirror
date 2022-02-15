@@ -1,6 +1,7 @@
 import ArgumentParser
 import SwiftShell
 import Foundation
+import SwiftyJSON
 
 /// Swift Package Manager 下载和更新依赖加速
 struct SpmMirror: ParsableCommand {
@@ -10,26 +11,65 @@ struct SpmMirror: ParsableCommand {
     
     mutating func run() throws {
         let pwd = try pwd()
+//        pwd = "/Users/king/Documents/Request/"
         SwiftShell.main.currentdirectory = pwd
+        let command = runAsync("swift", "package", "dump-package")
+        try command.finish()
+        /// 获取 Swift Package 的描述 JSON
+        let json = JSON(parseJSON: command.stdout.read())
+        /// 获取 Swift Package 名字
+        let name = json["name"].string
         try runAndPrint("swift", "package", "resolve")
         let home = try home()
         let _derivedDataPath = derivedDataPath ?? "\(home)/Library/Developer/Xcode/DerivedData"
         var currentDerivedDataPath:String?
+        /// 推荐相似的 DerivedData 路径数组
+        var recommendDerivedDataPaths:[String] = []
         for element in try FileManager.default.contentsOfDirectory(atPath: _derivedDataPath) {
+            let path = "\(_derivedDataPath)/\(element)"
             let infoPlistPath = "\(_derivedDataPath)/\(element)/info.plist"
+            guard let name = name else {
+                continue
+            }
+            guard element.contains(name) else {
+                continue
+            }
             guard FileManager.default.fileExists(atPath: infoPlistPath) else {
+                /// 如果包含 Swift Package Name 且不存在info.plist 则代表是推荐的
+                recommendDerivedDataPaths.append(path)
                 continue
             }
             guard let map = NSDictionary(contentsOfFile: infoPlistPath) else {
+                recommendDerivedDataPaths.append(path)
                 continue
             }
             guard let workspancePath = map["WorkspacePath"] as? String, workspancePath == pwd else {
                 continue
             }
-            currentDerivedDataPath = "\(_derivedDataPath)/\(element)"
+            currentDerivedDataPath = path
         }
-        guard let _currentDerivedDataPath = currentDerivedDataPath else {
-            throw "当前项目还没有 DerivedData 目录 请先用 Xcode 打开 Package.swift 自动创建"
+        var _currentDerivedDataPath:String
+        if let currentDerivedDataPath = currentDerivedDataPath {
+            _currentDerivedDataPath = currentDerivedDataPath
+        } else {
+            guard let recommandPath = recommendDerivedDataPaths.first else {
+                throw "当前项目还没有 DerivedData 目录 请先用 Xcode 打开 Package.swift,暂停Xcode拉取Swift Package Manager,重新执行此命令即可！"
+            }
+            _currentDerivedDataPath = recommandPath
+            /// 自动创建info.plist
+            let infoContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>LastAccessedDate</key>
+                <date>\(Date().description)</date>
+                <key>WorkspacePath</key>
+                <string>\(pwd)</string>
+            </dict>
+            </plist>
+            """
+            FileManager.default.createFile(atPath: "\(recommandPath)/info.plist", contents: infoContent.data(using: .utf8))
         }
         let buildPath = "\(pwd)/.build"
         let sourcePackagesPath = "\(_currentDerivedDataPath)/SourcePackages"
